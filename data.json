@@ -193,17 +193,10 @@
 	],
 	
 	"knownservers": [
-		["sm", "sodmod.ga:27962", "sod mod ctf"],
-		["1v1", "sodmod.ga:27963", "sod mod 1v1"],
-		["aim", "163.172.218.87:27965", "i can't aim"],	
-		["gpe", "91.146.65.115:27961", "gauntlet party est"],
-		["freezer", "87.117.203.203:27960", "massacre freezer"],	
-		["tricks", "163.172.218.87:27960", "para tricks"],	
-		["ffa","195.122.135.13:27960", "free-for-all"],
-		["idiots", "173.199.107.88:27960", "idiots with rail"],
-		["awffa", "163.172.218.87:27961", "all weapons ffa"],	
-		["aw1v1", "163.172.218.87:27951", "all weapons 1v1"],
-		["aw1v2", "163.172.218.87:27953", "all weapons 1v1 #2"]	
+		["central", "central.q3wfa.com:27960", "Chacha Chicago"],
+		["east", "east.q3wfa.com:27960", "Zeus NY"],
+		["midwest", "midwest.q3wfa.com:27960", "Adam IA"],
+		["west", "west.q3wfa.com:27960", "Solid West"]
 	],
 	
 	"customendings": [
@@ -225,7 +218,7 @@
 		"(╯°□°）╯︵ ┻━┻",
 		"┻━┻ ︵ヽ(`Д´)ﾉ︵ ┻━┻",
 		"Impressive!",
-		"Excellent!",
+		"Sexcellent!",
 		"☉_☉",
 		"ಠ_ಠ",
 		"(⌐■_■)",
@@ -243,5 +236,42 @@
 		[ "r_ignorehwgamma ",	"0",	null,		"Ignore or allow brightness settings (sometimes it's good to turn on)" ],
 		[ "com_blood",			"1",	"0",		"Toggles blood in game"],
 		[ "cg_drawrewards",		"1",	"0",		"Toggles drawing of rewards in game (excellent, impressive)"]
-	]
+	],
+
+    "wfamaps": [
+        [ "3level2-wfa",    "S", "" ],
+        [ "abyss2-wfa",     "S", "HighCap" ],
+        [ "cancer3-wfa",    "S", "" ],
+        [ "theslab-wfa",    "S", "LowCap large" ],
+        [ "zero-wfa",       "S", "" ],
+        [ "2fort2001-wfa",  "A", "LowCap" ],
+        [ "aggressor-wfa",  "A", "HighCap small" ],
+        [ "control-wfa",    "A", "" ],
+        [ "denali2-wfa",    "A", "LowCap" ],
+        [ "entropy-wfa",    "A", "HighCap" ],
+        [ "sellout-wfa",    "A", "HighCap small" ],
+        [ "sky2-wfa",       "A", "HighCap" ],
+        [ "stronger-wfa",   "A", "LowCap" ],
+        [ "zardoz-wfa",     "A", "" ],
+        [ "0fear-wfa",      "B", "" ],
+        [ "arctic-wfa",     "B", "" ],
+        [ "concrete-wfa",   "B", "" ],
+        [ "cruel3-wfa",     "B", "ChoppyFPS" ],
+        [ "element2-wfa",   "B", "" ],
+        [ "elevate-wfa",    "B", "" ],
+        [ "elevate2-wfa",   "B", "" ],
+        [ "fallout3-wfa",   "B", "" ],
+        [ "gensurfx-wfa",   "B", "" ],
+        [ "kheops-wfa",     "B", "HighCap" ],
+        [ "ravfort-wfa",    "B", "" ],
+        [ "space-wfa",      "B", "" ],
+        [ "torrent-wfa",    "B", "" ],
+        [ "2castles-wfa",   "C", "" ],
+        [ "2forttron-wfa",  "C", "" ],
+        [ "goodspeed-wfa",  "C", "ChoppyFPS" ],
+        [ "monochrome-wfa", "C", "large" ],
+        [ "spbite-wfa",     "C", "" ],
+        [ "tcf-wfa",        "C", "" ],
+        [ "olympus2k4-wfa", "Z", "MiniGames" ]
+    ]
 }

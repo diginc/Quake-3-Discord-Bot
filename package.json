@@ -10,6 +10,7 @@
   "license": "MIT",
   "dependencies": {
     "discord.js": "^11.3.0",
-    "requestify": "^0.2.5"
+    "gamedig": "^2.0.14",
+    "lodash": "^4.2.1"
   }
 }
