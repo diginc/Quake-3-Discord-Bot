@@ -290,7 +290,6 @@ var getServerInfo = (message, ip, port) => {
 var pingServer = (message, showInfo, showPlayers, editMessage) => {
 	var args = !editMessage ? getArgs(message) : editMessage.split(' ');
     var servers = []
-    var argServer = getServerFromArgs(message, args)
 
     if(args.includes('all')) {
 	    knownservers.forEach(server => {
@@ -300,11 +299,14 @@ var pingServer = (message, showInfo, showPlayers, editMessage) => {
                 'port': address[1]
             })
         })
-    } else if (argServer) {
+    } else if (args.length > 1) {
+        var argServer = getServerFromArgs(message, args)
         servers.push({
             'ip': argServer[0],
             'port': argServer[1]
         })
+    } else {
+        var argServer = getServerFromArgs(message, args) // help menu
     }
     servers.forEach(server => {
         getServerInfo(message, server.ip, server.port);
@@ -459,5 +461,6 @@ if (config.token === '')
 
 processMaps();
 bot.login(config.token);
+//watchServers();
 
 console.log('Connecting...');
