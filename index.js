@@ -1,5 +1,6 @@
 const Discord = require('discord.js');
-const requestify = require('requestify');
+const Gamedig = require('gamedig');
+const _ = require('lodash');
 
 const tools = require('./tools');
 const data = require('./data');
@@ -12,10 +13,14 @@ const ID_FUNC = 1;
 const ID_INFO = 2;
 const ID_HELP = 3;
 
+var knownservers = data.knownservers;
+var wfamaps = data.wfamaps;
+var byRank = {}
+var byTag = {}
+var allMaps = []
+
 //init custom extensions
 tools.init();
-
-var knownservers = data.knownservers;
 
 var getArgs = message => message.content.split(' ');
 
@@ -86,6 +91,90 @@ var getKnownServers = () => {
 	return res;
 }
 
+var processMaps = () => {
+    // Called during startup, saved to global vars
+	wfamaps.forEach(function(map) {
+        name = map[0]
+        rank = map[1]
+        tags = map[2].split()
+        console.log('processing '+ name +' '+ rank +' ' + tags)
+        allMaps.push(name)
+        if(!byRank[rank]) {
+            console.log("initiating list "+ rank)
+            byRank[rank] = []
+        }
+        byRank[rank].push(name)
+        tags.forEach(function(tag) {
+            if(!byTag[tag]) {
+                console.log("initiating list "+ tag)
+                byTag[tag] = []
+            } 
+            byTag[tag].push(name)
+        });
+    });
+}
+
+var parseMapArgs = (args) => {
+    console.log(args.length + ' args:' + args.join(' '))
+    var a = {
+        'action': null,
+        'filter': null,
+        'number': 1,
+    }
+    args.forEach(function(arg) {
+        switch(arg) {
+            case '\\maps': break;
+            case 'pick':            
+                console.log('action '+ arg)
+                a.action = arg;
+                break;
+            case /^\d*$/.test(arg) && arg:   
+                console.log('number '+ arg)
+                a.number = parseInt(arg);
+                break;
+            default:                
+                console.log('filter '+ arg)
+                a.filter = arg;
+                break;
+        }
+    });
+    console.log(a)
+    return a;
+}
+
+var getRankedMaps = (message) => {
+    var args = parseMapArgs(getArgs(message))
+    var ranksSorted = ['S','A','B','C']
+    var everything = ''
+    ranksSorted.forEach(function(rank) {
+        everything += "Rank {0}: {1}\n".format(rank, byRank[rank].join(', '))
+    });
+    var match = everything
+
+    if(args.filter) {
+        // Populate filtered pool
+        var pool = byRank[args.filter] || byTag[args.filter] || null
+        match = "No matches for "+ args.filter
+        // Filter + Random Pick
+        if (args.action == 'pick') {
+            match = "Random '{0}' Map(s): {2}".format(
+                args.filter, 
+                args.number,
+                _.sampleSize(pool, args.number).join(', ')
+            )
+        } else if (pool) { 
+            // Filter matched something, but no random picking
+            match = pool.join(', ')
+            match += "'{0}' Maps: {1}\n".format(args.filter, pool)
+        }
+    } else if (args.action == 'pick') {
+        // Non filtered random pick(s)
+        match = "Random Map(s): {0}".format(_.sampleSize(allMaps, args.number).join(', '))
+    }
+
+	return match;
+}
+
 var getGameVersion = (protocol) => {
 	switch(protocol) {
 		case '43' : return '1.11-1.16';
@@ -122,11 +211,19 @@ var getHelp = cmd => {
 	return `I don't know command \\${cmd}`;
 }
 
-// pings servers, gestatus sets serverInfo and players variables
-var pingServer = (message, showInfo, showPlayers, editMessage) => {
-	var args = !editMessage ? getArgs(message) : editMessage.split(' ');
-	var paramStr = '';
-	
+if (!String.prototype.format) {
+  String.prototype.format = function() {
+    var args = arguments;
+    return this.replace(/{(\d+)}/g, function(match, number) { 
+      return typeof args[number] != 'undefined'
+        ? args[number]
+        : match
+      ;
+    });
+  };
+}
+
+var getServerFromArgs = (message, args) => {
 	if (args && args.length > 1) {	
 		var tmp = args[1].trim();
 		var ip = '';
@@ -151,78 +248,67 @@ var pingServer = (message, showInfo, showPlayers, editMessage) => {
 			message.channel.send('Invalid ip ' + ip);
 			return;
 		}
-		
-		paramStr = "?ip=" + ip + "&port=" + port;
-		
-		//console.log(tmp + ' -> ' + paramStr);
+	    
+        return [ip, port]
 	} else {			
 		message.channel.send(getHelp('ping'));
 		return;
 	}
+}
 
-	requestify.get('http://sodmod.ga/API/getstatus' + paramStr)
-		.then(response => {	
-			var resp = response.getBody();
-			var players = undefined;
-			var serverInfo = undefined;
-			
-			//console.log(resp);
-			
-			eval(resp);
-			
-			// console.log(serverInfo);
-			// console.log(players);				
-			
-			var msg = "";
-			
-			if (serverInfo == undefined || serverInfo.sv_hostname == null) {
-				msg += "Server is not responding or ip adress is wrong";
-			} else {								
-				msg += "`" + serverInfo.sv_hostname.replace(/\^[^\^]/g, "").trim() + "` " + "`(Q3 " + getGameVersion(serverInfo.protocol) + ")` " 
-					 + "`" + ip + ":" + port + "`"  + "\n";
-				msg += "`Map: " + serverInfo.mapname + "` `" + serverInfo.sm_ClientsString + "`\n";					
-			
-				if (showPlayers) {											
-					msg += "```";
-				
-					if (players.length == 0) {
-						msg += "Server is empty";
-					} else {						
-						msg += "*Name*".padEnd(30) + " " + "*Ping*".padStart(6) + " " + "*Score*".padStart(7) + "\n";
-						
-						for(var i = 0; i < players.length; i++) {
-							msg += players[i].SimpleName.replace(/[\u0000-\u001F]+/gi, '[]').padEnd(30) + " ";
-							msg += players[i].Ping.padStart(5) + " ";
-							msg += players[i].Score.toString().padStart(7) + "\n";
-						}
-					}	
+var getServerInfo = (message, ip, port) => {
+    var response = '';
 
-					msg += "```";		
-				} else if (showInfo) {										
-					msg += "```";
-					
-					for (var prop in serverInfo)
-						if (!prop.startsWith('sm_'))					
-							msg += `${prop}: ${serverInfo[prop]}\n`;					
-					
-					msg += "```";
-				}
-			}
-			
-			if (editMessage) {
-				message.edit(msg);
-			} else {
-				if (showPlayers)
-					message.channel.send(msg).then(async function (message) {					
-						await message.react("🔄");					
-					}).catch(function() {
-						console.log("Something wrong");
-					});
-				else 
-					message.channel.send(msg);
-			}
-		}
-	);
+    var server = Gamedig.query( {
+        'type': 'quake3',
+        'host': ip,
+        'port': port
+    }).then((state) => {
+        //console.log(state)
+        active = state.players.length + state.bots.length;
+        max = state.maxplayers
+        a_players = state.players.map(function(p) { return p.name } );
+        a_bots = state.bots.map(function(p) { return p.name } );
+        count = "({0}/{1})".format(active, max)
+        players = ''
+        if (active > 0) {
+            players = '\n'
+            players += a_players.concat(a_bots).join(', ')
+            console.log(players)
+        }
+        response = "`/connect {0}` | {1}ms | {2} {3}{4}".format(state.connect, state.ping, state.map, count, players)
+        console.log(response);
+        message.channel.send(response);
+    }).catch((error) => {
+        console.log("Couldn't query "+ip+":"+port);
+        console.log(error)
+        message.channel.send("Couldn't query "+ip+":"+port+" - down maybe?");
+    })
+}
+
+// pings servers, gestatus sets serverInfo and players variables
+var pingServer = (message, showInfo, showPlayers, editMessage) => {
+	var args = !editMessage ? getArgs(message) : editMessage.split(' ');
+    var servers = []
+    var argServer = getServerFromArgs(message, args)
+
+    if(args.includes('all')) {
+	    knownservers.forEach(server => {
+            var address = server[1].split(':')
+            servers.push({
+                'ip': address[0],
+                'port': address[1]
+            })
+        })
+    } else if (argServer) {
+        servers.push({
+            'ip': argServer[0],
+            'port': argServer[1]
+        })
+    }
+    servers.forEach(server => {
+        getServerInfo(message, server.ip, server.port);
+    })
 }
 
 //all commands: command name, function, quick info, help description
@@ -249,13 +335,14 @@ var cmds = [
 	
 	[ 'ping', message => pingServer(message, false, true), 
 	'pings any known server or any ip:port\n', 
-	"`\\ping sm` - pings sodmod ctf `\\ping 139.5.28.161:27961` - pings specified ip:port\n`\\servers` - display known servers"],		
+	"`\\ping east` - pings east server `\\ping 139.5.28.161:27961` - pings specified ip:port\n`\\servers` - display known servers"],		
 	
 	[ 'info', message => pingServer(message, true, false), 
 	'gets serverinfo of any known server or any ip:port\n', 
-	"`\\info sm` - serverinfo of sodmod ctf `\\info 139.5.28.161:27961` - serverinfo of specified ip:port\n`\\servers` - display known servers"],
+	"`\\ping east` - pings east server `\\ping 139.5.28.161:27961` - pings specified ip:port\n`\\servers` - display known servers"],		
 	
 	[ 'servers', message => message.channel.send("Known servers:\n" + getKnownServers()), 'display known servers\n\n'],
+	[ 'maps', message => message.channel.send(getRankedMaps(message)), 'display maps the bot konws ranks for\n\n'],
 	
 	[ 'md',			message => shot(message, '%a drawing %r with machinegun on wall for %t',	'%a drawing %r with machinegun on wall'),	],		
 	[ 'mgdraw',		message => shot(message, '%a drawing %r with machinegun on wall for %t',	'%a drawing %r with machinegun on wall'),	
@@ -370,6 +457,7 @@ bot.on('ready', evt => {
 if (config.token === '')
 	throw new Error('Token is not defined');	
 
+processMaps();
 bot.login(config.token);
 
 console.log('Connecting...');
