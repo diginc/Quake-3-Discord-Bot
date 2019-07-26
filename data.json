@@ -198,6 +198,14 @@
 		["midwest", "midwest.q3wfa.com:27960", "Adam IA"],
 		["west", "west.q3wfa.com:27960", "Solid West"]
 	],
+ 
+    "activeThresholds": [
+        {"threshold": 1, "description": "someone is poking around"},
+        {"threshold": 3, "description": "things are heating up"},
+        {"threshold": 6, "description": "looks like some 3v3"},
+        {"threshold": 9, "description": "starting to get interesting"},
+        {"threshold": 12, "description": "you got a game going"}
+    ],
 	
 	"customendings": [
 		"with spicy ketchup",
